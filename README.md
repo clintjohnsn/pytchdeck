@@ -56,7 +56,7 @@ The following development environments are supported:
 
     ```sh
     # Create and install a virtual environment
-    uv sync --python 3.10 --all-extras
+    uv sync --python 3.12 --all-extras
 
     # Activate the virtual environment
     source .venv/bin/activate

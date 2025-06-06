@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM ghcr.io/astral-sh/uv:python3.10-bookworm AS dev
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm AS dev
 
 # Create and activate a virtual environment [1].
 # [1] https://docs.astral.sh/uv/concepts/projects/config/#project-environment-path
@@ -28,7 +28,7 @@ RUN mkdir ~/.history/ && \
     echo 'bind "\"\e[B\": history-search-forward"' >> ~/.bashrc && \
     echo 'eval "$(starship init bash)"' >> ~/.bashrc
 
-FROM python:3.10-slim AS app
+FROM python:3.12-slim AS app
 
 # Configure Python to print tracebacks on crash [1], and to not buffer stdout and stderr [2].
 # [1] https://docs.python.org/3/using/cmdline.html#envvar-PYTHONFAULTHANDLER

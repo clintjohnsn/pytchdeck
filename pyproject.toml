@@ -10,11 +10,17 @@ readme = "README.md"
 authors = [
   { name = "Clint Johnson", email = "clintjohnsn@gmil.com" },
 ]
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.12,<4.0"
 dependencies = [
-  "fastapi[all] (>=0.115.6)",
+  "docx2txt>=0.9",
+  "ell-ai[all]>=0.0.17",
+  "fastapi[all]>=0.111.1,<0.112.0",
   "gunicorn (>=23.0.0)",
+  "langgraph>=0.4.8",
+  "llama-index>=0.12.40",
+  "openai>=1.84.0",
   "poethepoet (>=0.32.1)",
+  "pymupdf>=1.26.0",
 ]
 
 [project.urls]  # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#well-known-labels
@@ -72,7 +78,7 @@ xfail_strict = true
 fix = true
 line-length = 100
 src = ["src", "tests"]
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -105,7 +111,7 @@ type = "simple"
         --host $host \
         --port $port \
         --reload \
-        pytchdeck.api:app
+        pytchdeck.main:app
     } else {
       gunicorn \
         --access-logfile - \
@@ -117,7 +123,7 @@ type = "simple"
         --worker-class uvicorn.workers.UvicornWorker \
         --worker-tmp-dir /dev/shm \
         --workers 2 \
-        pytchdeck.api:app
+        pytchdeck.main:app
     } fi
     """
 
