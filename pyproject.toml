@@ -12,15 +12,20 @@ authors = [
 ]
 requires-python = ">=3.12,<4.0"
 dependencies = [
+  "bs4>=0.0.2",
   "docx2txt>=0.9",
   "ell-ai[all]>=0.0.17",
   "fastapi[all]>=0.111.1,<0.112.0",
   "gunicorn (>=23.0.0)",
+  "langchain>=0.1.0",
+  "langchain-community>=0.3.25",
+  "langfuse>=3.0.1",
   "langgraph>=0.4.8",
   "llama-index>=0.12.40",
   "openai>=1.84.0",
   "poethepoet (>=0.32.1)",
   "pymupdf>=1.26.0",
+  "slowapi>=0.1.9",
 ]
 
 [project.urls]  # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#well-known-labels

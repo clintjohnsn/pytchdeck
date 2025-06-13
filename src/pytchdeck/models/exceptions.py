@@ -9,3 +9,6 @@ class InvalidUrlSchemeError(Exception):
 
 class InitializationError(Exception):
     """Initialization error."""
+
+class NoContentError(Exception):
+    """No content error."""

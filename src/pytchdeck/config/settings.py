@@ -1,10 +1,13 @@
 """Server settings."""
 
+import os
 from functools import lru_cache
 from pathlib import Path
 
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+load_dotenv()
 
 class Settings(BaseSettings):
     """Server settings."""
@@ -19,16 +22,20 @@ class Settings(BaseSettings):
     ENV: str = "dev"
     # Logging
     LOG_LEVEL: str = "INFO"
-
     # API Keys
     OPENAI_API_KEY: str
+    LANGFUSE_PUBLIC_KEY: str
+    LANGFUSE_SECRET_KEY: str
+    LANGFUSE_HOST: str = "https://cloud.langfuse.com"
 
     # Data Directory
     DATA_DIR: Path = Path(".data")
-    SOURCE_DIR: Path = DATA_DIR / "source"
+    CANDIDATE_DIR: Path = DATA_DIR / "candidate"
 
     # CORS Configuration
-    BACKEND_CORS_ORIGINS: str = "http://localhost:3000"
+    BACKEND_CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8000"
+    # Target Role
+    TARGET_ROLES: str = "Software Engineer, AI Engineer"
 
     @property
     def cors_origins(self) -> list[str]:
@@ -45,8 +52,13 @@ class Settings(BaseSettings):
             "allow_headers": ["*"],
         }
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
-
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Set environment variables
+        os.environ["USER_AGENT"] = f"pytchdeck/{self.VERSION}" # Ell user agent
+        os.environ["LANGFUSE_TRACING_ENVIRONMENT"] = self.ENV # Langfuse env
 
 @lru_cache
 def settings() -> Settings:
