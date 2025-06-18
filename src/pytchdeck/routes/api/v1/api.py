@@ -6,6 +6,7 @@ import pytchdeck.workflows.pitch as workflow
 from pytchdeck.dependencies.rate_limiter import limiter
 from pytchdeck.dependencies.workflow import CandidateContext, WorkflowConfig
 from pytchdeck.models.dto import PitchOutput, PitchRequest
+from pytchdeck.models.exceptions import NoContentError, InvalidJobDescriptionError, InvalidUrlSchemeError
 
 router = APIRouter(prefix="/api/v1", tags=["pitch"])
 
@@ -32,4 +33,10 @@ async def pitch(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="At least one of job_description or job_description_link must be provided",
         )
-    return await workflow.run(req=body, config=config, candidate_context=context)
+    try:
+        return await workflow.run(req=body, config=config, candidate_context=context)
+    except (workflow.InvalidJobDescriptionError, NoContentError, InvalidUrlSchemeError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while generating the pitch deck: {str(e)}",
+        )

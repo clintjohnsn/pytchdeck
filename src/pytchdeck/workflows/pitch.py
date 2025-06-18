@@ -25,7 +25,7 @@ async def run(req: PitchRequest, config: dict, candidate_context: str) -> PitchO
         jd_link=req.job_description_link.unicode_string() if req.job_description_link else None,
         candidate_context=candidate_context,
     )
-    result: PitchGenerationResult = await pitch_workflow.ainvoke(state, config)
+    result: PitchGenerationResult = await pitch_workflow.ainvoke(state, config)    
     logger.info(f"Pitch workflow result: {result}")
     return PitchOutput(link=result.link, title=result.title)
 
@@ -38,7 +38,6 @@ async def pitch_workflow(state: State) -> PitchGenerationResult:
     is_valid = bool(await is_valid_jd(jd))
     if not is_valid:
         raise InvalidJobDescriptionError("That does not seem like a job description.")
-    keywords: str = await extract_keywords(jd)
     fit_assessment: str = await assess_fit(jd=jd, candidate_context=candidate_context)
     pitch_content: str = await write_pitch(jd=jd, candidate_context=candidate_context, fit_assessment=fit_assessment)
     deck_content: str = await generate_deck(pitch_content)
@@ -47,7 +46,6 @@ async def pitch_workflow(state: State) -> PitchGenerationResult:
         link=f"http://localhost:3000/pitch/pitch_{state.id}.html",
         title="Pitch Deck",
     )
-
 
 @task()
 @ell.simple(model="gpt-4o-mini", temperature=0.1, client=llm())
@@ -63,54 +61,59 @@ def is_valid_jd(jd: str) -> str:
             """),
         ell.user(f"Content: {jd}"),
     ]
-@task()
-@ell.simple(model="gpt-4o-mini", temperature=0.2, client=llm())
-def extract_keywords(jd: str) -> str:
-    """
-    Extract a list of relevant keywords from the job description provided.
-
-    The keywords should be skills (technical or soft), core competencies,
-    values, experience, and other relevant requirements of the job.
-    """  # System prompt
-    logger.info("Extracting keywords")
-    return f"\n Job Description: \n {jd}"  # User prompt
-
 
 @task()
-@ell.simple(model="gpt-4o-mini", temperature=0.5, client=llm())
+@ell.simple(model="gpt-4o-mini", temperature=0.4, client=llm())
 def assess_fit(jd: str, candidate_context: str) -> str:
     """
     Given the following job description and information about a candidate,
-    assess and highlight the candidate's fit for the role.
+    assess the candidate's fit for the role.
+    Highlight what makes the candidate a good fit for the role, and what makes them not a good fit.
     """  # System prompt
     logger.info("Assessing candidate fit")
     return f"""
     \n Job Description: \n {jd} \n\n Candidate Context: \n {candidate_context}
     """  # User prompt
 
-
 @task()
-@ell.simple(model="gpt-4o-mini", client=llm())
+@ell.simple(model="gpt-4o-mini", temperature=0.6, client=llm())
 def write_pitch(jd: str, candidate_context: str, fit_assessment: str) -> str:
     """
-    Write a pitch based on the job description and candidate context on behalf of the candidate.
-    The pitch should be a short, concise, and engaging pitch that highlights the candidate's relevant experience and skills.
-    Keep the company context and values in mind.
+    Make a Pitch deck on behalf of the candidate.
+    The deck should be concise, engaging, and tailored to the job description.
+    Make upto 10 slides max, each with a title and content - bullet points are encouraged, but not required.
+    The writing style should be professional, but not overly formal. We are going for a high energy, punchy, and engaging tone. 
+    Feel free to use emojis, exclamation marks, and other elements to make the deck more engaging.
+    The deck should be visually appealing, with a clear structure and flow.
 
-    When the candidate is a good fit, the pitch should be positive and enthusiastic.
-    When the candidate is not a good fit, the pitch should be neutral and factual, talk about any transferable skills, mentioning any potential concerns.
-    If the candidate is not a good fit, mention transferable skills or possible potential, but be honest. Keep the pitch concise, and avoid unnecessary details.
+    You will be given the job description, candidate context, and a fit assessment report.
+    Pay special attention to the candidate's fit for the role - you need to help them make a strong case for why they are the best candidate for the job.
+    For the areas where the candidate is not a good fit, mention transferable skills or possible potential, and invite them to contact you for further discussion.
     """
-    logger.info("Writing pitch content")
+    logger.info("Making deck content")
     return f"\n **Job Description:** \n {jd}\n\n **Candidate Context:** \n {candidate_context}\n\n **Fit Assessment:** \n {fit_assessment}"
 
 
 @task()
-@ell.simple(model="gpt-4o-mini", client=llm())
-def generate_deck(content: str) -> str:
+@ell.simple(model="gpt-4o-mini", temperature=0.3, client=llm())
+def generate_deck(pitch_content: str) -> str:
     """
-    Make a deck based on the content provided.
-    Make 10-15 slides, each with a title and content.
+    Generate a pitch deck from the given content.
     """
-    logger.info("Making deck content")
-    return f"\n **Content:** \n {content}"
+    logger.info("Generating deck")
+    llms_txt: str = ""
+    return [
+        ell.system(f"""
+            Generate a reveal.js presentation from the given deck content.
+            Make it visually appealing, with a clear structure and flow.
+            Add animations, transitions, and other elements to make the deck more engaging.
+            Use scroll view to make the deck more interactive. 
+
+            Return only the HTML content of the presentation.
+            --------------------------------
+            Some documentation for Reveal.js:
+            {llms_txt} 
+            --------------------------------
+            """),
+        ell.user(f"Content: {pitch_content}"),
+    ]
