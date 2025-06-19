@@ -41,7 +41,7 @@ async def run(req: PitchRequest, config: dict, candidate_context: str) -> PitchO
         jd=req.job_description,
         jd_link=req.job_description_link.unicode_string() if req.job_description_link else None,
         candidate_context=candidate_context,
-        host=config["configurable"].get("host", "http://localhost:3000"),
+        host=config["configurable"].get("host", ""),
     )
     result: PitchGenerationResult = await pitch_workflow.ainvoke(state, config)    
     logger.info(f"Pitch workflow result: {result}")
@@ -133,10 +133,6 @@ def generate_deck(pitch_content: str) -> str:
             --------------------------------
             Some documentation for Reveal.js:
             {LLMS_TXT}
-
-            Template for the html. Use the cdn links for reveal.js and theme.
-            {HTML_TEMPLATE}
-            --------------------------------
             """),
         ell.user(f"Content: {pitch_content}"),
     ]
