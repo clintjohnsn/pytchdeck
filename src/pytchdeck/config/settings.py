@@ -29,8 +29,11 @@ class Settings(BaseSettings):
     LANGFUSE_HOST: str = "https://cloud.langfuse.com"
 
     # Data Directory
-    DATA_DIR: Path = Path(".data")
+    DATA_DIR: Path = Path("data")
     CANDIDATE_DIR: Path = DATA_DIR / "candidate"
+    PUBLIC_DIR: Path = DATA_DIR / "public"
+    # Directory for generated HTML decks
+    GENERATED_DIR: Path = PUBLIC_DIR / "generated"
 
     # CORS Configuration
     BACKEND_CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8000"
@@ -57,8 +60,11 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # Set environment variables
-        os.environ["USER_AGENT"] = f"pytchdeck/{self.VERSION}" # Ell user agent
-        os.environ["LANGFUSE_TRACING_ENVIRONMENT"] = self.ENV # Langfuse env
+        os.environ["USER_AGENT"] = f"pytchdeck/{self.VERSION}"  # Ell user agent
+        os.environ["LANGFUSE_TRACING_ENVIRONMENT"] = self.ENV  # Langfuse env
+        # Ensure required directories exist
+        self.PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
+        self.GENERATED_DIR.mkdir(parents=True, exist_ok=True)
 
 @lru_cache
 def settings() -> Settings:

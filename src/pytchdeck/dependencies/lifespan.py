@@ -44,10 +44,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
 async def setup_directories():
     """Create required directories if they don't exist."""
-    d: Path = config.CANDIDATE_DIR
-    if not d.exists():
-        d.mkdir(parents=True)
-        logger.info("Created required directories: %s", str(d))
+    dirs: list[Path] = [config.CANDIDATE_DIR, config.GENERATED_DIR]
+    for d in dirs:
+        if not d.exists():
+            d.mkdir(parents=True)
+            logger.info("Created required directories: %s", str(d))
 
 
 async def setup_candidate_context(app: FastAPI):

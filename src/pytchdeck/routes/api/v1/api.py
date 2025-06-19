@@ -1,18 +1,22 @@
 """API endpoints for the Pytchdeck application."""
 
-from fastapi import APIRouter, HTTPException, status, Request
+from fastapi import APIRouter, HTTPException, Request, status
 
 import pytchdeck.workflows.pitch as workflow
 from pytchdeck.dependencies.rate_limiter import limiter
 from pytchdeck.dependencies.workflow import CandidateContext, WorkflowConfig
 from pytchdeck.models.dto import PitchOutput, PitchRequest
-from pytchdeck.models.exceptions import NoContentError, InvalidJobDescriptionError, InvalidUrlSchemeError
+from pytchdeck.models.exceptions import (
+    InvalidJobDescriptionError,
+    InvalidUrlSchemeError,
+    NoContentError,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["pitch"])
 
 
 @router.post(
-    "/pitch",
+    "/generate",
     response_model=PitchOutput,
     summary="Generate a pitch deck",
     description="""
@@ -38,5 +42,5 @@ async def pitch(
     except (workflow.InvalidJobDescriptionError, NoContentError, InvalidUrlSchemeError) as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while generating the pitch deck: {str(e)}",
-        )
+            detail="An error occurred while generating the pitch deck",
+        ) from e

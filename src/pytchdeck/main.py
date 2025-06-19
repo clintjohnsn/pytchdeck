@@ -4,6 +4,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from pytchdeck.config.settings import settings
 from pytchdeck.dependencies.lifespan import lifespan
@@ -25,3 +26,10 @@ app.add_middleware(
 
 # Register routers
 app.include_router(api.router)
+
+# Serve generated pitch decks
+app.mount(
+    "/pitch",
+    StaticFiles(directory=config.GENERATED_DIR, html=True),
+    name="pitch",
+)

@@ -32,11 +32,16 @@ async def thread_id(request: Request) -> str:
     # If all else fails, generate a random UUID
     return str(uuid.uuid4())
 
-async def workflow_config(thread: str = Depends(thread_id)) -> dict:
+async def current_host(request: Request) -> str:
+    """Return the scheme://host of the incoming request (no trailing slash)."""
+    return str(request.base_url).rstrip("/")
+
+async def workflow_config(thread: str = Depends(thread_id), host: str = Depends(current_host)) -> dict:
     """Get the workflow config."""
     return {
         "configurable": {
-            "thread_id": thread  # Unique identifier to track workflow execution
+            "thread_id": thread,  # Unique identifier to track workflow execution
+            "host": host,
         },
         "callbacks": [trace_callback()],
     }

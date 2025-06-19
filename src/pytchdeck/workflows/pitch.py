@@ -1,6 +1,15 @@
 """Pitch Deck Creation Workflow."""
 
 import logging
+from pathlib import Path
+
+# Standard library
+# Third-party
+try:
+    from importlib import resources  # Python 3.9+
+except ImportError:  # pragma: no cover - fallback for older Python
+    import importlib_resources as resources  # type: ignore
+
 
 import ell
 from langgraph.checkpoint.memory import MemorySaver
@@ -16,6 +25,14 @@ from pytchdeck.workflows.nodes.readers import fetch_content
 logger = logging.getLogger(__name__)
 config = settings()
 
+# ---------------------------------------------------------------------------
+# Load template helpers
+# ---------------------------------------------------------------------------
+TEMPLATES_PACKAGE = "pytchdeck.templates"
+LLMS_TXT = resources.files(TEMPLATES_PACKAGE).joinpath("revealjs", "llms.txt").read_text(encoding="utf-8")
+HTML_TEMPLATE = resources.files(TEMPLATES_PACKAGE).joinpath("basic_template.html").read_text(encoding="utf-8")
+
+
 
 async def run(req: PitchRequest, config: dict, candidate_context: str) -> PitchOutput:
     """Create a pitch deck for a given job description."""
@@ -24,6 +41,7 @@ async def run(req: PitchRequest, config: dict, candidate_context: str) -> PitchO
         jd=req.job_description,
         jd_link=req.job_description_link.unicode_string() if req.job_description_link else None,
         candidate_context=candidate_context,
+        host=config["configurable"].get("host", "http://localhost:3000"),
     )
     result: PitchGenerationResult = await pitch_workflow.ainvoke(state, config)    
     logger.info(f"Pitch workflow result: {result}")
@@ -41,9 +59,12 @@ async def pitch_workflow(state: State) -> PitchGenerationResult:
     fit_assessment: str = await assess_fit(jd=jd, candidate_context=candidate_context)
     pitch_content: str = await write_pitch(jd=jd, candidate_context=candidate_context, fit_assessment=fit_assessment)
     deck_content: str = await generate_deck(pitch_content)
-    print(deck_content)
+    # Save generated HTML to file
+    output_path = settings().GENERATED_DIR / f"pitch_{state.id}.html"
+    Path(output_path).write_text(deck_content, encoding="utf-8")
+
     return PitchGenerationResult(
-        link=f"http://localhost:3000/pitch/pitch_{state.id}.html",
+        link=f"{state.host}/pitch/pitch_{state.id}.html",
         title="Pitch Deck",
     )
 
@@ -81,13 +102,11 @@ def write_pitch(jd: str, candidate_context: str, fit_assessment: str) -> str:
     """
     Make a Pitch deck on behalf of the candidate.
     The deck should be concise, engaging, and tailored to the job description.
-    Make upto 10 slides max, each with a title and content - bullet points are encouraged, but not required.
-    The writing style should be professional, but not overly formal. We are going for a high energy, punchy, and engaging tone. 
+    Make upto 7 slides max.
+    You must be creative with the content.
+    The writing style should be high energy, direct, straight shooting. 
+    You need to sell the recruiter on why the candidate is the best fit for the role.
     Feel free to use emojis, exclamation marks, and other elements to make the deck more engaging.
-    The deck should be visually appealing, with a clear structure and flow.
-
-    You will be given the job description, candidate context, and a fit assessment report.
-    Pay special attention to the candidate's fit for the role - you need to help them make a strong case for why they are the best candidate for the job.
     For the areas where the candidate is not a good fit, mention transferable skills or possible potential, and invite them to contact you for further discussion.
     """
     logger.info("Making deck content")
@@ -97,22 +116,26 @@ def write_pitch(jd: str, candidate_context: str, fit_assessment: str) -> str:
 @task()
 @ell.simple(model="gpt-4o-mini", temperature=0.3, client=llm())
 def generate_deck(pitch_content: str) -> str:
-    """
-    Generate a pitch deck from the given content.
-    """
+    """Generate a pitch deck from the given content."""
     logger.info("Generating deck")
-    llms_txt: str = ""
+
     return [
         ell.system(f"""
             Generate a reveal.js presentation from the given deck content.
             Make it visually appealing, with a clear structure and flow.
             Add animations, transitions, and other elements to make the deck more engaging.
-            Use scroll view to make the deck more interactive. 
+            Use scroll view to make the deck more interactive.
+            Remember to adjust the font size of the content to fit the slide.
+            Use different backgrounds, colors, and themes to make the deck more engaging.
+            Use transitions and auto-animate between slides to make the deck more engaging.
 
             Return only the HTML content of the presentation.
             --------------------------------
             Some documentation for Reveal.js:
-            {llms_txt} 
+            {LLMS_TXT}
+
+            Template for the html. Use the cdn links for reveal.js and theme.
+            {HTML_TEMPLATE}
             --------------------------------
             """),
         ell.user(f"Content: {pitch_content}"),

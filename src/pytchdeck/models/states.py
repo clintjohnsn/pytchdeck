@@ -5,11 +5,13 @@ from pydantic import BaseModel
 
 class State(BaseModel):
     """Workflow state."""
+
     id: str
     jd: str | None = None
     jd_link: str | None = None
     keywords: str | None = None
     candidate_context: str
+    host: str
 
 class PitchGenerationResult(BaseModel):
     """Pitch generation result.
