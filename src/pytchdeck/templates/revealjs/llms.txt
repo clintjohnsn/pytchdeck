@@ -5,9 +5,9 @@ title: Initialization
 layout: default
 ---
 
-# Initialization
+# Standalone mode Initialization
 
-To initialize the app in a single html page, you need to use the CDN versions of the assets
+To initialize the app in a single html page (standalone mode), you need to use the CDN versions of the assets. 
 
 ## Example
 ```
@@ -220,10 +220,6 @@ Decorate any element with `r-frame` to make it stand out against the background.
   </div>
 </div>
 
-
-
-
-
 ---
 id: methods
 title: API Methods
@@ -372,12 +368,6 @@ Reveal.getSlidesElement(); // <div class="slides">
 Reveal.getViewportElement(); // <div class="reveal-viewport">
 Reveal.getBackgroundsElement(); // <div class="backgrounds">
 ```
-
-## More Reading
-
-- [Plugin API](/plugins/#api)
-
-
 
 ---
 id: auto-animate

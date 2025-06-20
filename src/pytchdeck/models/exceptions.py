@@ -12,3 +12,6 @@ class InitializationError(Exception):
 
 class NoContentError(Exception):
     """No content error."""
+
+class StructureParsingError(Exception):
+    """Structure parsing error."""
