@@ -70,6 +70,8 @@ def assess_fit(jd: str, candidate_context: str) -> str:
     Given the following job description and information about a candidate,
     assess the candidate's fit for the role.
     Highlight what makes the candidate a good fit for the role, and what makes them not a good fit.
+    Pay attention to not only the requirements, but also the domain, culture, and other aspects of the company and what they do.
+    Return a concise JSON object
     """  # System prompt
     logger.info("Assessing candidate fit")
     return f"""
@@ -78,7 +80,7 @@ def assess_fit(jd: str, candidate_context: str) -> str:
 
 
 @task()
-@ell.simple(model="gpt-4.1-mini", temperature=0.4, client=llm())
+@ell.simple(model="gpt-4.1-nano", temperature=0.4, client=llm())
 def company_context(jd: str) -> str:
     """
     
@@ -89,7 +91,7 @@ def company_context(jd: str) -> str:
     """  # User prompt
 
 @task()
-@ell.simple(model="gpt-4.1", temperature=0.3, client=llm())
+@ell.simple(model="gpt-4.1", temperature=0.7, client=llm())
 def generate_deck(context: str) -> str:
     """Generate a pitch deck from the given content."""
     logger.info("Generating deck")
@@ -106,18 +108,22 @@ def generate_deck(context: str) -> str:
                 Generate a Pitch deck on behalf of the candidate, as a stand alone reveal.js presentation.
                 You need to sell the recruiter on why the candidate is the best fit for the role.
                 Feel free to use emojis, exclamation marks, and other elements to make the deck more engaging.
-                For the areas where the candidate is not a good fit, mention transferable skills or possible potential but be honest.
+                Disregard any areas of the job description that are not relevant to the candidate's profile.
+                The deck should be structured in a way that highlights the candidate's strengths and how they align.
                 The deck should be concise, engaging, and tailored to the job description.
                 Make it visually appealing, with a clear structure and flow.
                 You must be creative with the content.
                 Add animations, transitions, and other elements to make the deck more engaging.
                 Use scroll view to make the deck more interactive.
                 Remember to adjust the font size of the content to fit the slide.
-                Pick a random color scheme for the deck. Make sure that the colors make the text readable.
+                Pick a a cool color scheme and font for the deck and stick with it. Make sure that the colors make the text readable.
                 Use transitions and auto-animate between slides to make the deck more engaging.
                 Return only the HTML content of the presentation.
                 You can use the candidate profile picture and the company logo in the deck.
+                You can use https://cdn.jsdelivr.net/gh/devicons/devicon/icons to include icons in the deck.
                 IT IS CRUICIAL THAT YOU KEEP THE FONT SIZE SMALL ENOUGH TO FIT THE CONTENT ON THE SLIDE.
+                Think carefully about the structure of the deck, and how to best present the information.
+                Think about the design and how to make the deck visually appealing.
             </task>
             <content>
             {context}

@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from pytchdeck.config.settings import settings
+from pytchdeck.dependencies import rate_limiter
 from pytchdeck.dependencies.lifespan import lifespan
 from pytchdeck.routes.api.v1 import api
 
@@ -15,8 +16,14 @@ logging.basicConfig(level=config.LOG_LEVEL)
 
 
 app = FastAPI(
-    lifespan=lifespan, title=config.PROJECT_NAME, description=config.API_DESCRIPTION, version=config.VERSION
+    lifespan=lifespan,
+    title=config.PROJECT_NAME,
+    description=config.API_DESCRIPTION,
+    version=config.VERSION,
 )
+
+# Rate limiting setup
+rate_limiter.register(app)
 
 # CORS
 app.add_middleware(
