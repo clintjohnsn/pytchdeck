@@ -38,7 +38,12 @@ async def pitch(
         )
     try:
         return await workflow.run(req=body, config=config, candidate_context=context)
-    except (InvalidJobDescriptionError, NoContentError, InvalidUrlSchemeError, StructureParsingError) as e:
+    except (
+        InvalidJobDescriptionError,
+        NoContentError,
+        InvalidUrlSchemeError,
+        StructureParsingError,
+    ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="An error occurred while generating the pitch deck",

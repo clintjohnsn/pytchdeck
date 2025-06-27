@@ -3,7 +3,7 @@
 import httpx
 from fastapi.testclient import TestClient
 
-from pytchdeck.api import app
+from pytchdeck.main import app
 
 client = TestClient(app)
 

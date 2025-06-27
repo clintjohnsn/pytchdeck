@@ -19,7 +19,9 @@ class IsValidJD(BaseModel):
     """Job description validation result."""
 
     is_valid: bool = Field(description="Is this a valid job description post?")
-    reason: Literal["NO_CONTENT", "IRRELEVANT", "NO_MATCH", "VALID_JD"] = Field(description="Reason for validation result")
+    reason: Literal["NO_CONTENT", "IRRELEVANT", "NO_MATCH", "VALID_JD"] = Field(
+        description="Reason for validation result"
+    )
 
 
 class PitchGenerationResult(BaseModel):

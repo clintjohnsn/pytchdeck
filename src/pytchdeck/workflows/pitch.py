@@ -55,7 +55,9 @@ async def pitch_workflow(state: State) -> PitchGenerationResult:
     if not guardrails.is_valid:
         raise InvalidJobDescriptionError(f"{guardrails.reason or 'No reason provided'}")
     fit_assessment: str = await assess_fit(jd=jd, candidate_context=state.candidate_context)
-    deck_content: str = await generate_deck(context=f"{fit_assessment}\n\n{state.candidate_context}")
+    deck_content: str = await generate_deck(
+        context=f"{fit_assessment}\n\n{state.candidate_context}"
+    )
     output_path = settings().GENERATED_DIR / f"pitch_{state.id}.html"  # Save generated HTML to file
     Path(output_path).write_text(deck_content, encoding="utf-8")
     return PitchGenerationResult(
@@ -63,14 +65,17 @@ async def pitch_workflow(state: State) -> PitchGenerationResult:
         title="Pitch Deck",
     )
 
+
 @task()
 @ell.simple(model="gpt-4.1-mini", temperature=0.4, client=llm())
 def assess_fit(jd: str, candidate_context: str) -> str:
-    """
-    Given the following job description and information about a candidate,
-    assess the candidate's fit for the role.
-    Highlight what makes the candidate a good fit for the role, and what makes them not a good fit.
-    Pay attention to not only the requirements, but also the domain, culture, and other aspects of the company and what they do.
+    """Assess candidate's fit for the role based on job description and candidate information.
+
+    Given the following job description and information about a candidate, assess the
+    candidate's fit for the role. Highlight what makes the candidate a good fit for the role,
+    and what makes them not a good fit.
+    Pay attention to not only the requirements, but also the domain, culture, and other aspects
+    of the company and what they do.
     Return a concise JSON object
     """  # System prompt
     logger.info("Assessing candidate fit")
@@ -78,17 +83,6 @@ def assess_fit(jd: str, candidate_context: str) -> str:
     \n Job Description: \n {jd} \n\n Candidate Context: \n {candidate_context}
     """  # User prompt
 
-
-@task()
-@ell.simple(model="gpt-4.1-nano", temperature=0.4, client=llm())
-def company_context(jd: str) -> str:
-    """
-    
-    """  # System prompt
-    logger.info("Assessing candidate fit")
-    return f"""
-    \n Job Description: \n {jd}
-    """  # User prompt
 
 @task()
 @ell.simple(model="gpt-4.1", temperature=0.7, client=llm())

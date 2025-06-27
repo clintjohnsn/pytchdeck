@@ -1,4 +1,5 @@
 """Readers/ Document Loaders."""
+
 import logging
 import os
 from collections.abc import Callable
@@ -50,11 +51,13 @@ def local_reader(
 
     return read_fn
 
+
 async def read_files(path: Path) -> list[Document]:
     """Read files from a directory."""
     read = local_reader(path)
     docs = await read(os.listdir(path))
     return docs
+
 
 @task()
 async def fetch_content(url: str) -> str:

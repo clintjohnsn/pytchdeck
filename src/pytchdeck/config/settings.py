@@ -9,6 +9,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv()
 
+
 class Settings(BaseSettings):
     """Server settings."""
 
@@ -65,6 +66,7 @@ class Settings(BaseSettings):
         # Ensure required directories exist
         self.PUBLIC_DIR.mkdir(parents=True, exist_ok=True)
         self.GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+
 
 @lru_cache
 def settings() -> Settings:
