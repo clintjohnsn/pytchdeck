@@ -21,8 +21,10 @@ class Settings(BaseSettings):
 
     # Environment
     ENV: str = "dev"
+
     # Logging
     LOG_LEVEL: str = "INFO"
+
     # API Keys
     OPENAI_API_KEY: str
     LANGFUSE_PUBLIC_KEY: str
@@ -40,6 +42,12 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8000"
     # Target Role
     TARGET_ROLES: str = "Software Engineer, AI Engineer"
+
+    # Prompts
+    PROMPT_CACHE_TTL: int = 60 * 60 * 24 * 7 # 1 week
+
+    # LLM Configuration
+    LLM_MAX_RETRIES: int = 5
 
     @property
     def cors_origins(self) -> list[str]:

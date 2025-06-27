@@ -17,15 +17,15 @@ class PitchRequest(BaseModel):
     """
 
     job_description: str | None = Field(
-        None,
+        default=None,
         min_length=20,
         description="Detailed job description to base the pitch deck on.",
-        example="We are looking for a Senior Python Developer with 5+ years of experience...",
+        examples=["We are looking for a Senior Python Developer with 5+ years of experience..."],
     )
     job_description_link: HttpUrl | None = Field(
-        None,
+        default=None,
         description="Optional URL to the full job description if available. Must be a valid HTTP or HTTPS URL.",
-        example="https://example.com/jobs/senior-python-developer",
+        examples=["https://example.com/jobs/senior-python-developer"],
     )
 
     @field_validator("job_description_link")

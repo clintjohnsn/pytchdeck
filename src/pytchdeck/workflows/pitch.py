@@ -67,7 +67,7 @@ async def pitch_workflow(state: State) -> PitchGenerationResult:
 
 
 @task()
-@ell.simple(model="gpt-4.1-mini", temperature=0.4, client=llm())
+@ell.simple(model="gpt-4.1-mini", temperature=0.4, client=llm(native=True))
 def assess_fit(jd: str, candidate_context: str) -> str:
     """Assess candidate's fit for the role based on job description and candidate information.
 
@@ -85,7 +85,7 @@ def assess_fit(jd: str, candidate_context: str) -> str:
 
 
 @task()
-@ell.simple(model="gpt-4.1", temperature=0.7, client=llm())
+@ell.simple(model="gpt-4.1", temperature=0.7, client=llm(native=True))
 def generate_deck(context: str) -> str:
     """Generate a pitch deck from the given content."""
     logger.info("Generating deck")

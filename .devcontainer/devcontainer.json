@@ -30,7 +30,8 @@
                 "ms-toolsai.jupyter",
                 "ryanluker.vscode-coverage-gutters",
                 "tamasfe.even-better-toml",
-                "visualstudioexptteam.vscodeintellicode"
+                "visualstudioexptteam.vscodeintellicode",
+                "matangover.mypy"
             ],
             "settings": {
                 "coverage-gutters.coverageFileNames": [

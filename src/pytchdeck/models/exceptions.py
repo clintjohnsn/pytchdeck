@@ -19,3 +19,6 @@ class NoContentError(Exception):
 
 class StructureParsingError(Exception):
     """Structure parsing error."""
+
+class PromptNotFoundError(Exception):
+    """Prompt not found error."""

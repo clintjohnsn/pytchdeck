@@ -27,7 +27,7 @@ def jd_guardrails(jd: str) -> IsValidJD:
         raise StructureParsingError("Error parsing job description guardrail response") from e
 
 
-@ell.simple(model="gpt-4.1-nano", temperature=0.0, client=llm())
+@ell.simple(model="gpt-4.1-nano", temperature=0.0, client=llm(native=True))
 def validate_jd(jd: str) -> str:
     """Use a language model to check if the job description is valid."""
     logger.info("Validating job description")

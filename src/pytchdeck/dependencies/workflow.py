@@ -8,7 +8,9 @@ from typing import Annotated
 from fastapi import Depends, Request
 from pydantic import BaseModel
 
-from pytchdeck.clients.langfuse import trace_callback
+from pytchdeck.clients.langfuse import trace_callback, load_prompt
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
+from pytchdeck.clients.llm import llm
 
 
 async def hash_object(obj: BaseModel) -> str:
@@ -61,3 +63,26 @@ async def candidate_context(request: Request) -> str:
 
 
 CandidateContext = Annotated[str, Depends(candidate_context)]
+
+
+async def invoke() -> str:
+    """Invoke the prompt with the workflow config."""
+    payload= {}
+    response_model: dict | None = BaseModel
+    prompt: PromptTemplate | ChatPromptTemplate = await load_prompt(
+        name="prompt_name",
+        label="latest",
+        prompt_type="chat",
+        fallback="fallback {{messages}}",
+    )
+    if response_model:
+        model = llm(config=prompt.metadata).with_structured_output(method="json_mode")
+    model = llm(config=prompt.metadata)
+    chain = prompt | model
+    response = await chain.ainvoke(
+        payload,
+        config={
+            "callbacks": [trace_callback()],
+        },
+    )
+    return response.content
