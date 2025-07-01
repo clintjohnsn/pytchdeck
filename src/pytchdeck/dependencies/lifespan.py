@@ -27,12 +27,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     # Startup Events
     logger.info("Starting FastAPI application")
     # initialize ell store for local prompt management
-    ell.init(
-        store="./.logdir",
-        autocommit=False,
-        verbose=config.ENV == "dev",
-        default_client=llm(),
-    )
+    # ell.init(
+    #     store="./.logdir",
+    #     autocommit=False,
+    #     verbose=config.ENV == "dev",
+    #     default_client=llm(),
+    # )
     await setup_directories()  # Setup required directories
     await setup_candidate_context(app)  # Ingest candidate context
     logger.info("Started FastAPI application")

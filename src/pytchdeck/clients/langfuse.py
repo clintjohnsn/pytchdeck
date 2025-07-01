@@ -12,7 +12,6 @@ from pytchdeck.config.settings import settings
 from pytchdeck.models.exceptions import PromptNotFoundError
 
 # Initialize Langfuse client
-client = Langfuse()
 config = settings()
 DEFAULT_LABEL = "latest" if config.ENV == "dev" else "production"
 
@@ -28,13 +27,13 @@ def trace_callback() -> CallbackHandler:
 @lru_cache
 def get_client() -> Langfuse:
     """Get the Langfuse client."""
-    return client
+    return Langfuse()
 
 
 async def load_prompt(
     name: str,
-    label: str = DEFAULT_LABEL,
-    prompt_type: Literal["text", "chat"] = "text",
+    label: str | None = DEFAULT_LABEL,
+    prompt_type: Literal["text", "chat"] = "chat",
     fallback: str | list[dict] | None = None,
 ) -> ChatPromptTemplate | PromptTemplate:
     """Load a prompt from Langfuse.
@@ -43,7 +42,7 @@ async def load_prompt(
         name: The name of the prompt to load.
         label: The label of the prompt version to load. Defaults to "latest" in dev and "production"
         in other environments.
-        prompt_type: The type of prompt to load, either "text" or "chat". Defaults to "text".
+        prompt_type: The type of prompt to load, either "text" or "chat". Defaults to "chat".
         fallback: Optional fallback prompt in case the prompt cannot be found. This can be a string
             or a list of dictionaries representing the messages for a chat prompt.
 
@@ -55,8 +54,9 @@ async def load_prompt(
     ------
         PromptNotFoundError: If the prompt cannot be found or loaded.
     """
+    label = label or DEFAULT_LABEL
     try:
-        langfuse_prmpt = await get_client().get_prompt(
+        langfuse_prmpt = get_client().get_prompt(
             name=name,
             type=prompt_type,
             label=label,
@@ -65,7 +65,7 @@ async def load_prompt(
         )
     except Exception as e:
         logger.error(f"Error getting prompt {name}, type = {prompt_type} from langfuse client")
-        raise PromptNotFoundError(message=f"Prompt {name}, type = {prompt_type} not found") from e
+        raise PromptNotFoundError(f"Prompt {name}, type = {prompt_type} not found") from e
     metadata = {
         "langfuse_prompt": langfuse_prmpt,
         "provider": str(langfuse_prmpt.config["provider"])
@@ -81,7 +81,7 @@ async def load_prompt(
         "top_k": int(langfuse_prmpt.config["top_k"]) if "top_k" in langfuse_prmpt.config else None,
     }
     if prompt_type == "chat":
-        prompt = ChatPromptTemplate.from_messages(
+        prompt = ChatPromptTemplate(
             langfuse_prmpt.get_langchain_prompt(), metadata=metadata
         )
     else:

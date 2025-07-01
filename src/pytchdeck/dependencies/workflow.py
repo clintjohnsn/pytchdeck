@@ -1,23 +1,14 @@
 """Workflow middleware."""
 
-import hashlib
-import json
+import functools
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, Request
-from pydantic import BaseModel
-
-from pytchdeck.clients.langfuse import trace_callback, load_prompt
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
+
+from pytchdeck.clients.langfuse import load_prompt, trace_callback
 from pytchdeck.clients.llm import llm
-
-
-async def hash_object(obj: BaseModel) -> str:
-    """Generate a deterministic ID from the entire pydantic object using MD5."""
-    # Convert the request to a dictionary sorted by keys for consistent hashing
-    json_str = json.dumps(obj.model_dump(mode="json"), sort_keys=True)
-    return hashlib.md5(json_str.encode()).hexdigest()
 
 
 async def thread_id(request: Request) -> str:
@@ -25,14 +16,6 @@ async def thread_id(request: Request) -> str:
     # First try to get from headers
     if thread := request.headers.get("X-Thread-Id"):
         return thread
-    # If no header, try to get from request body
-    try:
-        body = await request.json()
-        if body:
-            return await hash_object(body)  # TODO: buggy, investigate
-    except Exception:
-        pass
-    # If all else fails, generate a random UUID
     return str(uuid.uuid4())
 
 
@@ -51,6 +34,9 @@ async def workflow_config(
             "host": host,
         },
         "callbacks": [trace_callback()],
+        "metadata": {
+            "langfuse_session_id": thread,
+        },
     }
 
 
@@ -65,24 +51,70 @@ async def candidate_context(request: Request) -> str:
 CandidateContext = Annotated[str, Depends(candidate_context)]
 
 
-async def invoke() -> str:
-    """Invoke the prompt with the workflow config."""
-    payload= {}
-    response_model: dict | None = BaseModel
-    prompt: PromptTemplate | ChatPromptTemplate = await load_prompt(
-        name="prompt_name",
-        label="latest",
-        prompt_type="chat",
-        fallback="fallback {{messages}}",
-    )
-    if response_model:
-        model = llm(config=prompt.metadata).with_structured_output(method="json_mode")
-    model = llm(config=prompt.metadata)
-    chain = prompt | model
-    response = await chain.ainvoke(
-        payload,
-        config={
-            "callbacks": [trace_callback()],
-        },
-    )
-    return response.content
+def lmp(
+    name: str,
+    label: str | None = None,
+    prompt_type: str = "chat",
+    fallback: str | list[str] | None = None,
+    response_model: Any | None = None,
+    **fallback_model_kwargs: dict[str, Any]
+) -> PromptTemplate | ChatPromptTemplate:
+    """
+    Call an LLM with a prompt template. Models a LMP (Language Model Program).
+    An LMP treats prompts as functions, encapsulating the prompt template,
+    the LLM configuration (like model name and temperature), and the function logic.
+
+    This decorator loads the prompt template from Langfuse, extracts the LLM config,
+    and calls the LLM.
+    Wrap a function to  invoke the LLM with the prompt template AFTER executing the function logic.
+    The function could either return a new set of input parameters (after some transformation)
+    or return None (which maps to no transformations).
+
+    Fallbacks: Specify fallback prompts to use if the given prompt template is not found.
+    You can also specify fallback model config to use if the primary model config is not found.
+
+    Args:
+        name (str): Name of the prompt template to load from Langfuse.
+        label (optional, str): Label for the prompt version,
+                defaults to "latest" in development environment
+                and "production" in production environment.
+        prompt_type (str): Type of the prompt, either "chat" or "text", defaults to "chat".
+        fallback (str | list[str] | None): Fallback prompt (chat or text) if the template not found.
+        response_model (Optional, Any): Provide a model for LLM calls with structured output.
+        **fallback_model_kwargs (dict[str, Any]): Additional model parameters to use as fallback model config.
+    """
+
+    def decorator(func):
+
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            """Wrapper function to call the LLM with the prompt template."""
+            new_params : dict[str, Any] | None  = await func(*args, **kwargs)
+            prompt = await load_prompt(
+                name=name,
+                label=label,
+                prompt_type=prompt_type,
+                fallback=fallback,
+            )
+            # Build LLM config from prompt metadata with kwargs fallback
+            llm_config = {}
+            config_keys = ["provider", "model", "temperature", "top_p", "top_k"]
+            for key in config_keys:
+                if prompt.metadata and key in prompt.metadata and prompt.metadata[key] is not None:
+                    llm_config[key] = prompt.metadata[key]
+                elif key in fallback_model_kwargs and fallback_model_kwargs[key] is not None:
+                    llm_config[key] = fallback_model_kwargs[key]
+            model = llm(**llm_config)
+            if response_model:
+                model = model.with_structured_output(response_model)
+            chain = prompt | model
+            payload = new_params if new_params else kwargs
+            response = await chain.ainvoke(
+                payload
+            )
+            response = response if response_model else response.content
+            return response
+
+        return wrapper
+
+    return decorator

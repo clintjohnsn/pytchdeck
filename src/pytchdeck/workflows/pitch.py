@@ -14,9 +14,11 @@ except ImportError:  # pragma: no cover - fallback for older Python
 import ell
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.func import entrypoint, task
+from pydantic import BaseModel
 
 from pytchdeck.clients.llm import llm
 from pytchdeck.config.settings import settings
+from pytchdeck.dependencies.workflow import lmp
 from pytchdeck.models.dto import PitchOutput, PitchRequest
 from pytchdeck.models.exceptions import InvalidJobDescriptionError
 from pytchdeck.models.states import IsValidJD, PitchGenerationResult, State
@@ -42,9 +44,32 @@ async def run(req: PitchRequest, config: dict, candidate_context: str) -> PitchO
         candidate_context=candidate_context,
         host=config["configurable"].get("host", ""),
     )
-    result: PitchGenerationResult = await pitch_workflow.ainvoke(state, config)
+    result: PitchGenerationResult = await test_workflow.ainvoke(state, config)
     logger.info(f"Pitch workflow result: {result}")
     return PitchOutput(link=result.link, title=result.title)
+
+
+@entrypoint(checkpointer=MemorySaver())
+async def test_workflow(state: State):
+    """Test workflow to demonstrate LLM call."""
+    result = await test_task(name="clint")
+    print(result)
+    return PitchGenerationResult(
+        link="",
+        title="Pitch Deck",
+    )
+
+class Test(BaseModel):
+    """Test model for demonstration purposes."""
+
+    given_name: str
+    message_to_user: str
+
+
+@lmp(name="test", response_model=Test)
+async def test_task(name: str) -> Test:
+    """Test task to demonstrate LLM call."""
+    return {"name": name.upper() + " JOHNSON"}
 
 
 @entrypoint(checkpointer=MemorySaver())
